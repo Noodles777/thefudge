@@ -8,4 +8,4 @@ Simply clone the repository
 
 # Usage
 Run it with the command
-`$ ./thefudge <source file>` where <source file> is the Befunge source code you wish thefudge to run.
+`$ ./thefudge <source file>` where \<source file\> is the Befunge source code you wish thefudge to run.
