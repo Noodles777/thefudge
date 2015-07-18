@@ -30,12 +30,36 @@ class Interpreter
     def start()
         source_in = File.new(@file, "r")
         read_source(source_in)
+
+        # Pad with spaces if necessary
+        pad()
         execute()
     end
 
     # Read in all of the source file so we can navigate around it
     def read_source(source_file)
         @source_lines = source_file.readlines()
+    end
+
+    def pad()
+        # Find longest line
+        max_length = 0
+
+        @source_lines.each do |line|
+            if line.length > max_length
+                max_length = line.length
+            end
+        end
+
+        # For loop through the lines
+        for i in 0..@source_lines.length - 1 do
+            line = @source_lines[i]
+
+            if line.length < max_length
+                line = line + " " * (max_length - line.length)
+                @source_lines[i] = line
+            end
+        end
     end
 
     # Sets the interpreter into stepping mode for debugging
