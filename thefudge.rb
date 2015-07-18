@@ -1,10 +1,12 @@
 #! /usr/bin/ruby
+require 'optparse'
 
 class Interpreter
     # Class constructor. It does how constructors do
-    def initialize(file)
+    def initialize(file, nopad, step)
         #@commands = ['+', '-', '*', '/', '%', '!', '`', '>', '<', '^', 'v', '?', '_', '|', '"', ':', '\\', '$', '.', ',', '#', 'g', 'p', '&', '~', '@']
-        @stop = false
+        @nopad = nopad
+        @step = step
 
         @file = file
         @source_lines = Array.new()
@@ -15,6 +17,7 @@ class Interpreter
         @curr_direction = :right
         @skip = false
         @ascii_mode = false
+        @stop = false
         checkfile()
     end
 
@@ -32,7 +35,10 @@ class Interpreter
         read_source(source_in)
 
         # Pad with spaces if necessary
-        pad()
+        if !@nopad
+            pad()
+        end
+
         execute()
     end
 
@@ -67,11 +73,6 @@ class Interpreter
         # =========================================
         # DEBUG CODE FOR STEPPING
         # =========================================
-        debugging = false
-        if not debugging
-            return
-        end
-
         puts "Curr char is: #{@curr_char}"
         puts "PC direction is: #{@curr_direction}"
         puts "Stack contents are: #{@stack}"
@@ -97,21 +98,11 @@ class Interpreter
     # Execute the statements in the source file
     def execute()
         while !@stop  do
-            # This is so that the next instruction or bit of data is skipped.
-            # The current character is updated twice in the true case purely for debugging purposes
-            if @skip == true
-                @curr_char = @source_lines[@line_num][@col_num]
-                debug()
+            @curr_char = @source_lines[@line_num][@col_num]
 
-                @skip = false
-                move()
-                @curr_char = @source_lines[@line_num][@col_num]
-                debug()
-            else
-                @curr_char = @source_lines[@line_num][@col_num]
+            if @step == true
                 debug()
             end
-
 
             if @ascii_mode == true
                 if @curr_char == '"'
@@ -355,6 +346,19 @@ class Interpreter
 
             # Move the PC
             move()
+
+            # For debugging. Without this the skipped character isn't show in debug which
+            # can be confusing
+            if @skip == true
+                @curr_char = @source_lines[@line_num][@col_num]
+
+                if @step == true
+                    debug()
+                end
+
+                move()
+                @skip = false
+            end
         end
     end
 
@@ -378,13 +382,36 @@ end
 
 
 if __FILE__ == $0
+    options = {:step => false, :nopad => false}
+    opts = OptionParser.new
+
+    opts.banner = "Usage: ./thefudge [OPTIONS] <source file>"
+
+    opts.on("-s", "--step",
+            "Sets the interpreter to step through the Befunge source, showing state at each step") do
+        options[:step] = true
+    end
+
+    opts.on("-p", "--nopad", "Don't pad source with spaces where necessary. May lead to crash.") do
+        options[:nopad] = true
+    end
+
+    opts.on("-h", "--help", "Displays this help dialog") do
+        puts opts
+        exit
+    end
+
+    opts.parse!(ARGV)
+
+
+
     if ARGV.length < 1
         puts "Pls, supply a file as an argument"
-        puts "Usage ./thefudge <source_file>"
+        puts opts
         exit(1)
     end
 
-    interp = Interpreter.new(ARGV[0])
+    interp = Interpreter.new(ARGV[0], options[:nopad], options[:step])
     puts "Starting interpreter...\n\n"
     interp.start()
 end
